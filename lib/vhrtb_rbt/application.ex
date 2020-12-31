@@ -6,7 +6,7 @@ defmodule VhrtbRbt.Application do
   use Application
 
   def start(_type, _args) do
-    children = [Bme280Sensor, SendData
+    children = [SendData
       # Starts a worker by calling: VhrtbRbt.Worker.start_link(arg)
       # {VhrtbRbt.Worker, arg}
     ]

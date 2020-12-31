@@ -6,31 +6,19 @@ use GenServer
   # Client
 
   def start_link(default) when is_list(default) do
-    GenServer.start_link(__MODULE__, default, name: :send_data)
+    GenServer.start_link(__MODULE__, default, name: __MODULE__)
+  end
+  
+  def send_data() do
+    GenServer.call(__MODULE__, :send_data)
   end
 
-  def push(pid, element) do
-    GenServer.cast(pid, {:push, element})
+  def send_photo() do
+    GenServer.call(__MODULE__, :send_photo)
   end
 
-  def get_data(pid) do
-    GenServer.call(pid, :get_data)
-  end
-
-  def send_data(pid) do
-    GenServer.call(pid, :send_data)
-  end
-
-  def send_photo(pid) do
-    GenServer.call(pid, :send_photo)
-  end
-
-  def send_env(pid) do
-    GenServer.call(pid, :send_env)
-  end
-
-  def pop(pid) do
-    GenServer.call(pid, :pop)
+  def send_env(env_data) do
+    GenServer.call(__MODULE__, {:send_env, env_data})
   end
 
   # Server (callbacks)
@@ -42,11 +30,6 @@ use GenServer
   end
 
   @impl true
-  def handle_call(:pop, _from, [head | tail]) do
-    {:reply, head, tail}
-  end
-
-  @impl true
   def handle_call(:send_data, _from, state) do
     response = HTTPoison.get! "#{@vhr_web_url}/hello77"
 
@@ -54,9 +37,12 @@ use GenServer
   end
 
   @impl true
-  def handle_call(:send_env, _from, state) do
+  def handle_call({:send_env, env_data}, _from, state) do
+    %{:temp => temp, :humid => humid} = env_data
+    body ="{\"temp\" : #{temp}, \"humid\": #{humid}}"
     url = "#{@vhr_web_url}/api/env"
-    response = HTTPoison.post url, "{\"id\": \"89\", \"body\": \"test\"}", [{"Content-Type", "application/json"}]
+    response = HTTPoison.post url, body,
+      [{"Content-Type", "application/json"}]
     {:reply, {response}, state}
   end
 
@@ -79,16 +65,5 @@ use GenServer
     
     {:reply, {response}, state}
   end
-
-  @impl true
-  def handle_call(:get_data, _from, state) do
-    {:reply, {70.0, 59.6, 44.2}, state}
-  end
-
-  @impl true
-  def handle_cast({:push, element}, state) do
-    {:noreply, [element | state]}
-  end
-
 end
 
